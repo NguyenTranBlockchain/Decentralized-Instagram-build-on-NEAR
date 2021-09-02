@@ -1,4 +1,4 @@
-import { Context, logging, PersistentMap, storage, u128, ContractPromiseBatch } from 'near-sdk-as'
+import { Context, logging, PersistentMap, storage, u128, ContractPromiseBatch, PersistentVector } from 'near-sdk-as'
 
 const DEFAULT_DONATION: u128 = u128.from("1000000000000000000000000"); // 1 NEAR
 
@@ -25,24 +25,35 @@ export class Image {
     }
 }
 
-let imageCount: u32 = 0;
-const imagesMap = new PersistentMap<u32, Image>('img');
+const imageVector = new PersistentVector<Image>('img');
+// const imagesMap = new PersistentMap<u32, Image>('img');
+
+export function getAllImages(): Array<Image> {
+    logging.log('ImageCount ');
+    logging.log(imageVector.length);
+    let result: Array<Image> = []
+    for (let i = 0; i < imageVector.length; i++) {
+        logging.log('images count');
+        result[i]= imageVector[i];
+    }
+    return result
+}
 
 export function uploadImage(_imageHash: string, _description: string): void {
     assert(_imageHash.length > 0, 'ImageHash length must be > 0')
     assert(_description.length > 0, 'Description length must be > 0')
-
-    imageCount++;
-    let image = new Image(imageCount, _imageHash, _description, u128.from('0'), Context.sender)
-    imagesMap.set(imageCount, image)
+    
+    let image = new Image(imageVector.length, _imageHash, _description, u128.from('0'), Context.sender)
+    logging.log(image);
+    imageVector.push(image)
 }
 
 export function tipImageOwner(_id: u32): void {
-    assert(_id <= imageCount, 'index out of bound');
-    let image = imagesMap.getSome(_id);
+    // assert(_id <= imageCount, 'index out of bound');
+    // let image = imagesMap.getSome(_id);
     
-    let amount = image.tipAmount;
-    ContractPromiseBatch.create(Context.sender).transfer(DEFAULT_DONATION);
-    image.tipAmount = amount + DEFAULT_DONATION;
-    imagesMap.set(_id, image);
+    // let amount = image.tipAmount;
+    // ContractPromiseBatch.create(Context.sender).transfer(DEFAULT_DONATION);
+    // image.tipAmount = amount + DEFAULT_DONATION;
+    // imagesMap.set(_id, image);
 }

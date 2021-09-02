@@ -1,15 +1,49 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
+import { Form, Container, Button, Row } from 'react-bootstrap';
+import {render} from 'react-dom';
+//IPFS
+const ipfsClient = require('ipfs-http-client')
+const ipfs = ipfsClient({ host: 'ipfs.infura.io', port: 5001, protocol: 'https' }) // leaving out the arguments will default to these values
 const Home = (props) => {
     const [images, setImages] = useState([]);
+    const [buffer, setBuffer] = useState();
 
-    const [imageDescription, setImageDescription] = useState('');
-    const uploadImage = async (description) => {
+    const imageDescription = useRef();
 
+    useEffect(() => {
+        async function getListImages() {
+            setImages(await window.contract.getAllImages());
+        }
+        getListImages();
+    }, []);
+
+    const uploadImage = async () => {
+        console.log('Uploading file to ipfs');
+        console.log(imageDescription.current.value);
+
+        ipfs.add(buffer, async (err, result) => {
+            console.log('IPFS result', result)
+            if (err) {
+                console.log(err);
+                return;
+            }  
+            await window.contract.uploadImage({ 
+                _imageHash: result[0].hash,
+                _description: imageDescription.current.value
+            });
+        });
     }
 
-    const captureFile = async () => {
-        
+    const captureFile = event => {
+        event.preventDefault()
+        const reader = new window.FileReader()
+        let file = event.target.files[0]
+        reader.readAsArrayBuffer(file)
+
+        reader.onloadend = () => {
+            setBuffer(Buffer(reader.result))        
+        }
     }
 
     const tipImageOwner = async () => {
@@ -25,18 +59,17 @@ const Home = (props) => {
               <h2>Share Image</h2>
               <form onSubmit={(event) => {
                 event.preventDefault()
-                uploadImage(imageDescription)
+                uploadImage()
               }} >
                 <input type='file' accept=".jpg, .jpeg, .png, .bmp, .gif" onChange={captureFile} />
                   <div className="form-group mr-sm-2">
                     <br></br>
-                      <input
-                        id="imageDescription"
-                        type="text"
-                        ref={(input) => { setImageDescription(input) }}
-                        className="form-control"
-                        placeholder="Image description..."
-                        required />
+            <Form>
+                <Form.Group className='mb-3'>
+                    <Form.Label>Description</Form.Label>
+                    <Form.Control ref={imageDescription} placeholder='Enter Description'></Form.Control>
+                </Form.Group>
+            </Form>
                   </div>
                 <button type="submit" className="btn btn-primary btn-block btn-lg">Upload!</button>
               </form>
@@ -45,22 +78,16 @@ const Home = (props) => {
                 return(
                   <div className="card mb-4" key={key} >
                     <div className="card-header">
-                      <img
-                        className='mr-2'
-                        width='30'
-                        height='30'
-                        src={`data:image/png;base64,${new Identicon(image.author, 30).toString()}`}
-                      />
                       <small className="text-muted">{image.author}</small>
                     </div>
                     <ul id="imageList" className="list-group list-group-flush">
                       <li className="list-group-item">
-                        <p className="text-center"><img src={`http://localhost:8080/ipfs/${image.hash}`} style={{ maxWidth: '420px'}}/></p>
+                        <p className="text-center"><img src={`https://ipfs.infura.io/ipfs/${image.hash}`} style={{ maxWidth: '420px'}}/></p>
                         <p>{image.description}</p>
                       </li>
                       <li key={key} className="list-group-item py-2">
                         <small className="float-left mt-1 text-muted">
-                          TIPS: {window.web3.utils.fromWei(image.tipAmount.toString(), 'Ether')} ETH
+                            {image.tipAmount} NEAR
                         </small>
                         <button
                           className="btn btn-link btn-sm float-right pt-0"
@@ -68,7 +95,6 @@ const Home = (props) => {
                           onClick={(event) => {
                             let tipAmount = window.web3.utils.toWei('0.1', 'Ether')
                             console.log(event.target.name, tipAmount)
-                            tipImageOwner(event.target.name, tipAmount)
                           }}
                         >
                           TIP 1 NEAR
