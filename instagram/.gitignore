@@ -9,6 +9,7 @@
 /out
 /dist
 
+/node_modules
 # keys
 /neardev
 
