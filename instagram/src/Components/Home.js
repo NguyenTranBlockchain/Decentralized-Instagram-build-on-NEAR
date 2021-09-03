@@ -46,8 +46,8 @@ const Home = (props) => {
         }
     }
 
-    const tipImageOwner = async () => {
-
+    const tipImageOwner = async (id) => {
+        await window.contract.tipImageOwner({ _id: images[id].id });
     }
 
     return (
@@ -87,14 +87,15 @@ const Home = (props) => {
                       </li>
                       <li key={key} className="list-group-item py-2">
                         <small className="float-left mt-1 text-muted">
-                            {image.tipAmount} NEAR
+                            {image.tipAmount / 10**24} NEAR
                         </small>
                         <button
                           className="btn btn-link btn-sm float-right pt-0"
                           name={image.id}
                           onClick={(event) => {
-                            let tipAmount = window.web3.utils.toWei('0.1', 'Ether')
-                            console.log(event.target.name, tipAmount)
+                              tipImageOwner(event.target.name)
+                            // let tipAmount = window.web3.utils.toWei('0.1', 'Ether')
+                            // console.log(event.target.name, tipAmount)
                           }}
                         >
                           TIP 1 NEAR
