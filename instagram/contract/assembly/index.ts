@@ -1,6 +1,5 @@
 import { Context, logging, PersistentMap, storage, u128, ContractPromiseBatch, PersistentVector } from 'near-sdk-as'
-
-const DEFAULT_DONATION: u128 = u128.from('1000000000000000000000000'); // 1 NEAR
+(const DEFAULT_DONATION: u128 = u128.from('1000000000000000000000000'); // 1 NEAR
 
 @nearBindgen
 export class Image {
@@ -55,7 +54,7 @@ export function tipImageOwner(_id: i32): void {
     let image = imageVector[_id]; 
     
     let amount = image.tipAmount;
-    ContractPromiseBatch.create(Context.sender).transfer(DEFAULT_DONATION);
+    ContractPromiseBatch.create(Context.predecessor).transfer(DEFAULT_DONATION);
     image.tipAmount = amount + DEFAULT_DONATION;
     imageVector[_id] = image;
 }

@@ -1,10 +1,14 @@
 import React, { useEffect, useState, useRef } from 'react';
-
 import { Form, Container, Button, Row } from 'react-bootstrap';
 import {render} from 'react-dom';
+import * as nearAPI from "near-api-js";
+
 //IPFS
 const ipfsClient = require('ipfs-http-client')
 const ipfs = ipfsClient({ host: 'ipfs.infura.io', port: 5001, protocol: 'https' }) // leaving out the arguments will default to these values
+
+const { utils } = nearAPI;
+
 const Home = (props) => {
     const [images, setImages] = useState([]);
     const [buffer, setBuffer] = useState();
@@ -87,7 +91,7 @@ const Home = (props) => {
                       </li>
                       <li key={key} className="list-group-item py-2">
                         <small className="float-left mt-1 text-muted">
-                            {image.tipAmount / 10**24} NEAR
+                            {utils.format.formatNearAmount(image.tipAmount)} NEAR
                         </small>
                         <button
                           className="btn btn-link btn-sm float-right pt-0"
