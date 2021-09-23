@@ -3,10 +3,6 @@ import { Form, Container, Button, Row } from 'react-bootstrap';
 import {render} from 'react-dom';
 import * as nearAPI from "near-api-js";
 
-//IPFS
-const ipfsClient = require('ipfs-http-client')
-const ipfs = ipfsClient({ host: 'ipfs.infura.io', port: 5001, protocol: 'https' }) // leaving out the arguments will default to these values
-
 const { utils } = nearAPI;
 
 const Home = (props) => {

@@ -47,25 +47,24 @@ export function getAllImages(): Array<Image> {
     return result
 }
 
-export function getTotalTipsForOwner(_owner_id: string): i32 {
-    var total = 0;
+export function getTotalTipsForOwner(_owner_id: string): u128 {
+    var total = u128.Zero;
     for (let i = 0; i < imageVector.length; i++) {
         logging.log(_owner_id);
         logging.log(imageVector[i].author == _owner_id);
         logging.log(i.toString() + ' ' + imageVector[i].author)
         if(_owner_id == imageVector[i].author && imageVector[i].tipAmount > u128.Zero) {
-            total += 1;
+            total = total + imageVector[i].tipAmount;
         }
     }
     return total;
-    
 }
 
 export function uploadImage(_imageHash: string, _description: string): void {
     assert(_imageHash.length > 0, 'ImageHash length must be > 0')
     assert(_description.length > 0, 'Description length must be > 0')
     
-    let image = new Image(imageVector.length, _imageHash, _description, u128.from('0'), Context.sender)
+    let image = new Image(imageVector.length, _imageHash, _description, u128.Zero, Context.sender)
     logging.log(image);
     imageVector.push(image)
 }

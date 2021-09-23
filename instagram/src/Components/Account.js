@@ -62,11 +62,7 @@ const Account = (props) => {
             setBuffer(Buffer(reader.result))        
         }
     }
-
-    const tipImageOwner = async (id) => {
-        await window.contract.tipImageOwner({ _id: images[id].id });
-    }
-
+    
     return (
       <div className="container-fluid mt-5">
         <div className="row">
@@ -74,7 +70,7 @@ const Account = (props) => {
             <div className="content mr-auto ml-auto">
               <h1>{window.accountId}</h1>
                 <h4>Total Balance: {totalBalance === null ? "_" : parseFloat(utils.format.formatNearAmount(totalBalance)).toFixed(2) + " NEAR"}</h4>
-                <h4>Total TIPS from fan: {tipFromFan} NEAR</h4>
+                <h4>Total TIPS from fan: {utils.format.formatNearAmount(tipFromFan)} NEAR</h4>
               <p>&nbsp;</p>
               <h4>What's on your mind?</h4>
               <form onSubmit={(event) => {
