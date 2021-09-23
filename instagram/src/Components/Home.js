@@ -11,47 +11,22 @@ const { utils } = nearAPI;
 
 const Home = (props) => {
     const [images, setImages] = useState([]);
-    const [buffer, setBuffer] = useState();
-
-    const imageDescription = useRef();
 
     useEffect(() => {
         async function getListImages() {
             setImages(await window.contract.getAllImages());
         }
+        async function initContract() {
+            await window.contract.init_contract();
+        }
+        
+        initContract();
         getListImages();
     }, []);
 
-    const uploadImage = async () => {
-        console.log('Uploading file to ipfs');
-        console.log(imageDescription.current.value);
-
-        ipfs.add(buffer, async (err, result) => {
-            console.log('IPFS result', result)
-            if (err) {
-                console.log(err);
-                return;
-            }  
-            await window.contract.uploadImage({ 
-                _imageHash: result[0].hash,
-                _description: imageDescription.current.value
-            });
-        });
-    }
-
-    const captureFile = event => {
-        event.preventDefault()
-        const reader = new window.FileReader()
-        let file = event.target.files[0]
-        reader.readAsArrayBuffer(file)
-
-        reader.onloadend = () => {
-            setBuffer(Buffer(reader.result))        
-        }
-    }
-
     const tipImageOwner = async (id) => {
         await window.contract.tipImageOwner({ _id: images[id].id });
+        alert("Tip successful")
     }
 
     return (
@@ -60,29 +35,11 @@ const Home = (props) => {
           <main role="main" className="col-lg-12 ml-auto mr-auto" style={{ maxWidth: '500px' }}>
             <div className="content mr-auto ml-auto">
               <p>&nbsp;</p>
-              <h2>Share Image</h2>
-              <form onSubmit={(event) => {
-                event.preventDefault()
-                uploadImage()
-              }} >
-                <input type='file' accept=".jpg, .jpeg, .png, .bmp, .gif" onChange={captureFile} />
-                  <div className="form-group mr-sm-2">
-                    <br></br>
-            <Form>
-                <Form.Group className='mb-3'>
-                    <Form.Label>Description</Form.Label>
-                    <Form.Control ref={imageDescription} placeholder='Enter Description'></Form.Control>
-                </Form.Group>
-            </Form>
-                  </div>
-                <button type="submit" className="btn btn-primary btn-block btn-lg">Upload!</button>
-              </form>
-              <p>&nbsp;</p>
               { images.map((image, key) => {
                 return(
                   <div className="card mb-4" key={key} >
                     <div className="card-header">
-                      <small className="text-muted">{image.author}</small>
+                        <small className="text-muted">Posted by: {image.author}</small>
                     </div>
                     <ul id="imageList" className="list-group list-group-flush">
                       <li className="list-group-item">
@@ -93,17 +50,17 @@ const Home = (props) => {
                         <small className="float-left mt-1 text-muted">
                             {utils.format.formatNearAmount(image.tipAmount)} NEAR
                         </small>
+                        {window.accountId !== image.author ?
                         <button
                           className="btn btn-link btn-sm float-right pt-0"
                           name={image.id}
                           onClick={(event) => {
                               tipImageOwner(event.target.name)
-                            // let tipAmount = window.web3.utils.toWei('0.1', 'Ether')
-                            // console.log(event.target.name, tipAmount)
                           }}
                         >
                           TIP 1 NEAR
                         </button>
+                          : <></>}
                       </li>
                     </ul>
                   </div>
@@ -116,4 +73,4 @@ const Home = (props) => {
     );
 }
 
-export default Home;
+export default Home

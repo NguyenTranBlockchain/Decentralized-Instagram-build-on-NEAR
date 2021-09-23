@@ -1,70 +1,99 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { Form, Container, Button, Row } from 'react-bootstrap';
+import {render} from 'react-dom';
+import * as nearAPI from "near-api-js";
+
+//IPFS
+const ipfsClient = require('ipfs-http-client')
+const ipfs = ipfsClient({ host: 'ipfs.infura.io', port: 5001, protocol: 'https' }) // leaving out the arguments will default to these values
+
+const { utils } = nearAPI;
 
 const Account = (props) => {
+    const [images, setImages] = useState([]);
+    const [buffer, setBuffer] = useState();
+    const [totalBalance, setTotalBalance] = useState(null);
+    const [tipFromFan, setTipFromFan] = useState(0);
+
+    const imageDescription = useRef();
+
+    useEffect(() => {
+        async function getAccountBalance() {
+            let balance = await window.account.getAccountBalance()
+            setTotalBalance(balance.total);
+            console.log(balance)
+        }
+
+        async function getTipsFromFan() {
+            let tips = await window.contract.getTotalTipsForOwner({ _owner_id: window.accountId });
+            console.log(tips);
+            setTipFromFan(tips);
+        }
+        
+        getAccountBalance();
+        getTipsFromFan();
+    }, []);
+
+    const uploadImage = async () => {
+        console.log('Uploading file to ipfs');
+        console.log(imageDescription.current.value);
+
+        ipfs.add(buffer, async (err, result) => {
+            console.log('IPFS result', result)
+            if (err) {
+                console.log(err);
+                return;
+            }  
+            await window.contract.uploadImage({ 
+                _imageHash: result[0].hash,
+                _description: imageDescription.current.value
+            });
+            alert("Upload Successful");
+        });
+    }
+
+    const captureFile = event => {
+        event.preventDefault()
+        const reader = new window.FileReader()
+        let file = event.target.files[0]
+        reader.readAsArrayBuffer(file)
+
+        reader.onloadend = () => {
+            setBuffer(Buffer(reader.result))        
+        }
+    }
+
+    const tipImageOwner = async (id) => {
+        await window.contract.tipImageOwner({ _id: images[id].id });
+    }
 
     return (
       <div className="container-fluid mt-5">
         <div className="row">
-          <main role="main" className="col-lg-12 ml-auto mr-auto" style={{ maxWidth: '500px' }}>
+          <main role="main" className="col-lg-12 ml-auto mr-auto" style={{ maxWidth: '700px' }}>
             <div className="content mr-auto ml-auto">
+              <h1>{window.accountId}</h1>
+                <h4>Total Balance: {totalBalance === null ? "_" : parseFloat(utils.format.formatNearAmount(totalBalance)).toFixed(2) + " NEAR"}</h4>
+                <h4>Total TIPS from fan: {tipFromFan} NEAR</h4>
               <p>&nbsp;</p>
-              <h2>Share Image</h2>
+              <h4>What's on your mind?</h4>
               <form onSubmit={(event) => {
                 event.preventDefault()
-                const description = this.imageDescription.value
-                this.props.uploadImage(description)
+                uploadImage()
               }} >
-                <input type='file' accept=".jpg, .jpeg, .png, .bmp, .gif" onChange={this.props.captureFile} />
+                <input type='file' accept=".jpg, .jpeg, .png, .bmp, .gif" onChange={captureFile} />
                   <div className="form-group mr-sm-2">
                     <br></br>
-                      <input
-                        id="imageDescription"
-                        type="text"
-                        ref={(input) => { this.imageDescription = input }}
-                        className="form-control"
-                        placeholder="Image description..."
-                        required />
+            <Form>
+                <Form.Group className='mb-3'>
+                    <Form.Label>Description</Form.Label>
+                    <Form.Control ref={imageDescription} placeholder='Enter Description'></Form.Control>
+                </Form.Group>
+            </Form>
                   </div>
-                <button type="submit" class="btn btn-primary btn-block btn-lg">Upload!</button>
+                <button type="submit" className="btn btn-primary btn-block btn-lg">Upload</button>
               </form>
               <p>&nbsp;</p>
-              { this.props.images.map((image, key) => {
-                return(
-                  <div className="card mb-4" key={key} >
-                    <div className="card-header">
-                      <img
-                        className='mr-2'
-                        width='30'
-                        height='30'
-                        src={`data:image/png;base64,${new Identicon(image.author, 30).toString()}`}
-                      />
-                      <small className="text-muted">{image.author}</small>
-                    </div>
-                    <ul id="imageList" className="list-group list-group-flush">
-                      <li className="list-group-item">
-                        <p class="text-center"><img src={`http://localhost:8080/ipfs/${image.hash}`} style={{ maxWidth: '420px'}}/></p>
-                        <p>{image.description}</p>
-                      </li>
-                      <li key={key} className="list-group-item py-2">
-                        <small className="float-left mt-1 text-muted">
-                          TIPS: {window.web3.utils.fromWei(image.tipAmount.toString(), 'Ether')} ETH
-                        </small>
-                        <button
-                          className="btn btn-link btn-sm float-right pt-0"
-                          name={image.id}
-                          onClick={(event) => {
-                            let tipAmount = window.web3.utils.toWei('0.1', 'Ether')
-                            console.log(event.target.name, tipAmount)
-                            this.props.tipImageOwner(event.target.name, tipAmount)
-                          }}
-                        >
-                          TIP 1 NEAR
-                        </button>
-                      </li>
-                    </ul>
-                  </div>
-                )
-              })}
             </div>
           </main>
         </div>
@@ -72,4 +101,4 @@ const Account = (props) => {
     );
 }
 
-export default Account;
+export default Account 

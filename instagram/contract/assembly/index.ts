@@ -3,7 +3,6 @@ const DEFAULT_DONATION: u128 = u128.from('1000000000000000000000000'); // 1 NEAR
 const DEFAULT_RECEIVED: u128 = u128.from('900000000000000000000000');
 const DEFAULT_FEE: u128 = u128.from('100000000000000000000000');
 
-let foundation_account = 'nguyenpikachu.testnet'
 @nearBindgen
 export class Image {
     id: u32;
@@ -28,7 +27,14 @@ export class Image {
 }
 
 const imageVector = new PersistentVector<Image>('img');
-// const imagesMap = new PersistentMap<u32, Image>('img');
+
+export function init_contract(): void {
+    logging.log('init call');
+    if (storage.getString('foundation') === null) {
+        logging.log(Context.sender);
+        storage.setString('foundation', Context.sender);
+    }
+}
 
 export function getAllImages(): Array<Image> {
     logging.log('ImageCount ');
@@ -39,6 +45,20 @@ export function getAllImages(): Array<Image> {
         result[i]= imageVector[i];
     }
     return result
+}
+
+export function getTotalTipsForOwner(_owner_id: string): i32 {
+    var total = 0;
+    for (let i = 0; i < imageVector.length; i++) {
+        logging.log(_owner_id);
+        logging.log(imageVector[i].author == _owner_id);
+        logging.log(i.toString() + ' ' + imageVector[i].author)
+        if(_owner_id == imageVector[i].author && imageVector[i].tipAmount > u128.Zero) {
+            total += 1;
+        }
+    }
+    return total;
+    
 }
 
 export function uploadImage(_imageHash: string, _description: string): void {
@@ -56,9 +76,12 @@ export function tipImageOwner(_id: i32): void {
     assert(_id <= imageVector.length - 1, 'index out of bound');
     let image = imageVector[_id]; 
     
-    let amount = image.tipAmount;
-    ContractPromiseBatch.create(image.author).transfer(DEFAULT_RECEIVED);
-    ContractPromiseBatch.create(foundation_account).transfer(DEFAULT_FEE);
-    image.tipAmount = amount + DEFAULT_DONATION;
-    imageVector[_id] = image;
+    let foundation_account = storage.getString('foundation');
+    if (foundation_account !== null) {
+        let amount = image.tipAmount;
+        ContractPromiseBatch.create(image.author).transfer(DEFAULT_RECEIVED);
+        ContractPromiseBatch.create(foundation_account).transfer(DEFAULT_FEE);
+        image.tipAmount = amount + DEFAULT_DONATION;
+        imageVector[_id] = image;
+    }
 }
